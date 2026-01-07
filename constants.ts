@@ -1,0 +1,49 @@
+
+import { WordData } from './types.ts';
+
+/**
+ * WORDS CONFIGURATION
+ * Maps words to local audio files in the 'audio/' folder.
+ * Path: audio/[word_lowercase].mp3
+ */
+const RAW_WORDS = [
+  "APPLAUD", "MYTH", "LIFEGUARD", "GOVERNMENT", "LIBRARIES", 
+  "HEADACHE", "IMPOSSIBLE", "CONTINUE", "LANGUAGE", "DEFINITION", 
+  "WHISPERING", "PARAGRAPH", "INTERPRET", "VULNERABLE", "UNBELIEVABLE", 
+  "ACHIEVED", "POPULATION", "TSUNAMI", "SIGNATURE", "ANALYZE", 
+  "SYNONYMS", "EARTHQUAKE", "INCREASE", "ENTERTAIN", "SQUEEZE", 
+  "WINDSHIELD", "TONGUE", "MIGHTY", "THUNDERSTORM", "SLIPPERY", 
+  "SPLURGE", "SCARECROW", "PROGRESSIVE", "MULTIPLY", "BLOSSOM", 
+  "WORRIED", "SACRIFICE", "FREIGHT", "CREATURES", "STRENGTH", 
+  "ECLIPSE", "DISTANCE", "SURVIVORS", "SCISSORS", "DOUBTFUL", 
+  "CLIMAX", "DIALOGUE", "EXERCISE", "STUBBORN", "TRACKSUIT",
+  "ENTERTAINMENT", "EQUIPMENT", "EXPERIENCE", "PREFERABLE", "TELEVISION",
+  "CELEBRATION", "HUMOROUS", "EXCLAMATION", "IGNORANT", "MEASUREMENT",
+  "REQUIREMENT", "DEFINITELY", "INDEPENDENCE", "IMMIGRANT", "INCREDIBLE",
+  "COMMUNICATION", "WHISTLING", "EMBARRASSING", "ANXIOUS", "TECHNOLOGY",
+  "METROPOLITAN", "MILLIONAIRE", "CHARACTERIZATION", "ANNOUNCEMENT", "LEADERSHIP",
+  "EXPRESSION", "NEIGHBORHOOD", "SCIENTIFIC", "THROUGHOUT", "CONDENSATION",
+  "MEANWHILE", "UNFORGETTABLE", "TRIUMPH", "EXPENSIVE", "APPEARANCE",
+  "POLITELY", "SHIPWRECK", "INGREDIENT", "HERITAGE", "MONUMENTS",
+  "DISCIPLINE", "HURRICANE", "INTELLIGENT", "LIGHTNING", "COMPETITION",
+  "PRIVILEGE", "CURRICULUM", "ELECTRICITY", "PERSONALITY", "SPECIALIZATION"
+];
+
+export const WORDS: WordData[] = RAW_WORDS.map(w => ({
+  word: w,
+  // Strictly word.toLowerCase() + .mp3 as requested
+  audio: `audio/${w.toLowerCase()}.mp3`
+}));
+
+export const EXTRA_TILES_COUNT = 5;
+export const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+export const COLORS = {
+  primary: 'text-purple-600',
+  secondary: 'text-pink-500',
+  bg: 'bg-pink-100',
+  accent: 'bg-purple-200',
+  button: 'bg-gradient-to-r from-pink-400 to-purple-400',
+  correct: 'bg-green-400',
+  incorrect: 'bg-red-400',
+};
