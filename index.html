@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +11,7 @@
             font-family: 'Bubblegum Sans', cursive;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-            background-color: #fdf2f8; /* pink-50 */
+            background-color: #fdf2f8;
             margin: 0;
             padding: 0;
         }
@@ -24,10 +23,9 @@
             25% { transform: translateX(-8px); }
             75% { transform: translateX(8px); }
         }
-        .shake {
+        .animate-shake {
             animation: shake 0.3s ease-in-out;
         }
-        /* Prevent selection for better game feel on mobile */
         * {
             user-select: none;
             -webkit-user-select: none;
@@ -41,15 +39,15 @@
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
     "canvas-confetti": "https://esm.sh/canvas-confetti@1.9.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
 <body class="overflow-hidden">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <!-- No manual script tag here; the environment handles the index.tsx entry point automatically. -->
 </body>
 </html>
