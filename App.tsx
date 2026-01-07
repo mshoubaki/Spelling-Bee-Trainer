@@ -77,26 +77,6 @@ const App: React.FC = () => {
     return audioContextRef.current;
   };
 
-  /**
-   * iOS Fix: Prime the audio system.
-   * This must be called inside a user gesture (click) handler.
-   */
-  const primeAudioSystem = async () => {
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
-    }
-    
-    // Play a tiny silence on the HTML5 audio element to unlock it for iOS
-    if (audioRef.current) {
-      audioRef.current.play().then(() => {
-        audioRef.current?.pause();
-      }).catch(() => {
-        // Expected fail if no src yet, but enough to 'bless' the element
-      });
-    }
-  };
-
   const playTTSFallback = async (text: string) => {
     setIsGeneratingAudio(true);
     try {
@@ -131,23 +111,13 @@ const App: React.FC = () => {
 
   const playWordAudio = useCallback((idx: number) => {
     if (audioRef.current && WORDS[idx]) {
-      try {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current.src = WORDS[idx].audio;
-        audioRef.current.load();
-        
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            console.warn(`Local audio play prevented for ${WORDS[idx].word}:`, error);
-            playTTSFallback(WORDS[idx].word);
-          });
-        }
-      } catch (err) {
-        console.error("Audio error:", err);
+      audioRef.current.pause();
+      audioRef.current.src = WORDS[idx].audio;
+      audioRef.current.load();
+      audioRef.current.play().catch(() => {
+        console.warn(`Local audio failed for ${WORDS[idx].word}, falling back to TTS.`);
         playTTSFallback(WORDS[idx].word);
-      }
+      });
     }
   }, []);
 
@@ -164,7 +134,7 @@ const App: React.FC = () => {
     setStartTime(Date.now());
     setGameState(GameState.PLAYING);
     
-    // Auto-play the word after a short delay (iOS needs primeAudioSystem to have been called earlier)
+    // Auto-play the word after a short delay
     setTimeout(() => playWordAudio(globalIdx), 800);
   }, [playWordAudio]);
 
@@ -183,13 +153,16 @@ const App: React.FC = () => {
     
     if (nextIdxInStage < WORDS_PER_STAGE) {
       if (isSkip) {
+        // If skipped, go directly to next word
         setCurrentWordInStageIdx(nextIdxInStage);
         initRound(currentStageIdx, nextIdxInStage);
       } else {
+        // If won, show celebration first
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#f472b6', '#a855f7', '#ec4899'] });
         setGameState(GameState.CELEBRATING);
       }
     } else {
+      // End of stage
       if (!isSkip) {
         confetti({ particleCount: 200, spread: 90, origin: { y: 0.5 } });
       }
@@ -211,6 +184,7 @@ const App: React.FC = () => {
       stage.correctCount = Math.max(stage.correctCount, correctCount);
       next[currentStageIdx] = stage;
       
+      // Unlock next stage if we got at least 1 star
       if (stars >= 1 && currentStageIdx < 9) {
         next[currentStageIdx + 1] = { ...next[currentStageIdx + 1], isUnlocked: true };
       }
@@ -220,7 +194,6 @@ const App: React.FC = () => {
   };
 
   const nextWord = () => {
-    primeAudioSystem(); // Resume audio on this user gesture
     const nextIdx = currentWordInStageIdx + 1;
     setCurrentWordInStageIdx(nextIdx);
     initRound(currentStageIdx, nextIdx);
@@ -228,7 +201,6 @@ const App: React.FC = () => {
 
   const selectStage = (idx: number) => {
     if (!stagesProgress[idx].isUnlocked) return;
-    primeAudioSystem(); // Resume audio on this user gesture
     setCurrentStageIdx(idx);
     setCurrentWordInStageIdx(0);
     setSessionHistory([]);
@@ -252,20 +224,14 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${COLORS.bg} p-4 sm:p-8 selection:bg-purple-200 overflow-x-hidden`}>
-      <audio ref={audioRef} playsInline />
+      <audio ref={audioRef} onError={() => playTTSFallback(currentWord)} />
       <main className="max-w-5xl mx-auto min-h-[85vh] flex items-center justify-center">
         {gameState === GameState.START && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in zoom-in duration-500">
             <KittyMascot className="w-48 h-48 drop-shadow-xl" />
             <h1 className={`text-7xl font-extrabold ${COLORS.primary} font-brand tracking-tight drop-shadow-sm`}>Kitty Spells</h1>
             <p className="text-2xl text-pink-500 font-medium max-w-md">Learn to spell 100 fun words and collect all the stars!</p>
-            <button 
-              onClick={() => { 
-                primeAudioSystem(); 
-                setGameState(GameState.STAGE_SELECT); 
-              }} 
-              className={`${COLORS.button} text-white px-12 py-6 rounded-full text-3xl font-bold font-brand shadow-2xl hover:scale-105 active:scale-95 transition-transform flex items-center gap-4`}
-            >
+            <button onClick={() => { getAudioContext(); setGameState(GameState.STAGE_SELECT); }} className={`${COLORS.button} text-white px-12 py-6 rounded-full text-3xl font-bold font-brand shadow-2xl hover:scale-105 active:scale-95 transition-transform flex items-center gap-4`}>
               <Play fill="currentColor" className="w-10 h-10" /> START ADVENTURE
             </button>
           </div>
@@ -315,7 +281,7 @@ const App: React.FC = () => {
                 <span className="text-xs font-bold text-pink-400 uppercase tracking-widest">Stage {currentStageIdx + 1}</span>
                 <span className="font-brand text-2xl text-purple-700 tracking-tight">Word {currentWordInStageIdx + 1} of 10</span>
               </div>
-              <button onClick={() => { primeAudioSystem(); finishWord(true); }} className="px-5 py-2.5 rounded-xl bg-purple-100 text-purple-600 font-bold border-2 border-purple-200 text-sm flex items-center gap-2 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95">
+              <button onClick={() => finishWord(true)} className="px-5 py-2.5 rounded-xl bg-purple-100 text-purple-600 font-bold border-2 border-purple-200 text-sm flex items-center gap-2 hover:bg-purple-200 transition-all hover:scale-105 active:scale-95">
                 Skip Word <FastForward size={18} />
               </button>
             </div>
@@ -324,7 +290,7 @@ const App: React.FC = () => {
               <div className="relative group">
                 <KittyMascot className="w-40 h-40 drop-shadow-lg group-hover:scale-105 transition-transform" />
                 <button 
-                  onClick={() => { primeAudioSystem(); playWordAudio(globalWordIdx); }} 
+                  onClick={() => playWordAudio(globalWordIdx)} 
                   disabled={isGeneratingAudio}
                   className="absolute -bottom-2 -right-2 p-5 bg-white rounded-full shadow-2xl text-purple-600 hover:text-pink-500 hover:scale-110 transition-all border-4 border-pink-50 active:scale-90"
                 >
@@ -401,7 +367,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <button onClick={() => { primeAudioSystem(); setGameState(GameState.STAGE_SELECT); }} className={`${COLORS.button} text-white px-10 py-5 rounded-full text-2xl font-brand shadow-xl hover:scale-105 active:scale-95 transition-all`}>BACK TO STAGES</button>
+              <button onClick={() => setGameState(GameState.STAGE_SELECT)} className={`${COLORS.button} text-white px-10 py-5 rounded-full text-2xl font-brand shadow-xl hover:scale-105 active:scale-95 transition-all`}>BACK TO STAGES</button>
               <button onClick={() => selectStage(currentStageIdx)} className="bg-white text-purple-600 border-4 border-purple-100 px-10 py-5 rounded-full text-2xl font-brand hover:bg-purple-50 transition-all">REPLAY STAGE</button>
             </div>
           </div>
